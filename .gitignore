@@ -1,0 +1,30 @@
+# Virtual environment
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Large data files (re-downloadable, too big for GitHub)
+data/flywire_raw/
+data/door_raw/
+data/nowotny/
+outputs/*.npy
+
+# Large pipeline artifacts
+pipeline_artifacts/consolidated_cell_types.csv.gz
+pipeline_artifacts/__pycache__/
+
+# Trained models (regeneratable from train.py)
+models/*.joblib
+models/*.npy
+
+# Generated predictions (regeneratable)
+predictions/*.csv
+
+# Generated dummy data
+dummy.csv
+dummy_alpha.csv
+
+# OS junk
+.DS_Store
+Thumbs.db

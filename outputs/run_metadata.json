@@ -1,0 +1,11 @@
+{
+  "n_samples": 71,
+  "n_wine": 36,
+  "n_industrial": 35,
+  "status": "ORN-level baseline (Control A) fully real and validated. Connectome KC expansion NOT included -- blocked on missing FlyWire Cell Types file. DoOR expansion NOT included -- RData format unreadable without R.",
+  "caveats": [
+    "Labels are binary (wine/neutral vs industrial/hazardous) as published, not the 4-way drug/explosive/toxin split -- that needs the source paper Table 2 compound key.",
+    "FAFB connectome is female; this ORN data is from male flies (relevant only once connectome step is added).",
+    "n=71 total odorants; all accuracies are 5-fold CV, not single split."
+  ]
+}
