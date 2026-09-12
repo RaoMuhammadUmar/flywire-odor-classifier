@@ -18,9 +18,30 @@ volatile chemicals.
 
 ## Headline result
 
-Raw ORN features (SVM: 83.0%) match or exceed connectome-derived features
-on this dataset — an honest negative result. See `predictions/` for the raw
-numbers, and `DATA.md` for what the data actually is.
+We ran two evaluations. Both point the same direction.
+
+**1. Connectome comparison (5-fold CV, on all 71 samples):**
+
+| Feature set | Best model | Accuracy |
+|---|---|---|
+| Raw ORN (20-D) | SVM | **83.0%** |
+| Connectome-derived KC (5,177-D) | RF | 81.9% |
+| Shuffled-label control | — | ~50% (chance) |
+
+The connectome did **not** improve classification. The signal is already
+present at the receptor level, and the mushroom body's sparse expansion
+coding did not amplify it on this dataset. An honest negative result.
+
+**2. Held-out test (single 80/20 split, 15 samples never seen in training):**
+
+| Model | Accuracy |
+|---|---|
+| LogReg | 93.3% (14/15) |
+| SVM | 93.3% (14/15) |
+| RF | 86.7% (13/15) |
+| MLP | 60.0% (9/15) |
+
+See `DATA.md` for what the data actually is.
 
 ### Model accuracy on the held-out test set
 
