@@ -1,5 +1,7 @@
 # Olfactory Pipeline — FlyWire Connectome-Based Chemical Classification
 
+**🔗 [Try the live 3D demo →](https://raomuhammadumar.github.io/flywire-odor-classifier/viz/)**
+
 A feasibility study integrating the FlyWire FAFB fruit fly connectome with
 real Nowotny/de Bruyne ORN recordings to classify wine vs. industrial
 volatile chemicals.

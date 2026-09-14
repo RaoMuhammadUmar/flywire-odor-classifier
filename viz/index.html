@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FlyWire Olfactory Circuit — Live Fly Brain</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+  :root{
+    --bg:#080b10;
+    --panel:rgba(14,18,25,0.72);
+    --panel-solid:rgba(14,18,25,0.92);
+    --border:rgba(120,140,150,0.16);
+    --border-bright:rgba(120,140,150,0.32);
+    --text:#eae8e1;
+    --muted:#7c838f;
+    --muted-dim:#5a616c;
+    --wine:#a9455d;
+    --ind:#c98a1f;
+    --orn:#45e0c9;
+    --pn:#7a9ee0;
+    --kc:#f2b705;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;color:var(--text);font-family:'Fraunces',serif;
+    overflow:hidden;background:#080b10;}
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(ellipse 60% 50% at 30% 20%, rgba(69,224,201,0.06) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 60% at 75% 60%, rgba(122,158,224,0.05) 0%, transparent 55%),
+      radial-gradient(ellipse 70% 50% at 50% 95%, rgba(242,183,5,0.04) 0%, transparent 60%);
+    animation: bgPulse 14s ease-in-out infinite;
+  }
+  @keyframes bgPulse{
+    0%,100%{opacity:0.9;}
+    50%{opacity:1;}
+  }
+  #canvas-wrap{position:fixed;inset:0;z-index:1;}
+  canvas{display:block;}
+
+  /* HEADER */
+  header{position:fixed;top:0;left:0;right:0;padding:20px 28px 0;
+    display:flex;justify-content:space-between;pointer-events:none;z-index:5;}
+  header h1{font-size:20px;font-weight:600;margin:0;letter-spacing:0.1px;
+    background:linear-gradient(120deg,#eae8e1 0%,#a8c4d4 55%,#45e0c9 100%);
+    -webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 0 18px rgba(69,224,201,0.08));}
+  header .sub{font-family:'IBM Plex Mono',monospace;font-size:11px;
+    color:var(--muted);margin-top:4px;letter-spacing:0.15px;}
+  header .stats{font-family:'IBM Plex Mono',monospace;font-size:11px;
+    color:var(--muted);text-align:right;line-height:1.7;letter-spacing:0.1px;}
+  header .stats b{color:var(--text);font-weight:500;}
+  header .stats .live{color:var(--orn);font-weight:500;
+    display:inline-flex;align-items:center;gap:5px;}
+  header .stats .live::before{
+    content:"";width:6px;height:6px;border-radius:50%;background:var(--orn);
+    box-shadow:0 0 8px var(--orn);animation:pulseDot 1.8s ease-in-out infinite;}
+  @keyframes pulseDot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.4;transform:scale(0.8);}}
+
+  /* LEFT INPUT PANEL */
+  #left{position:fixed;left:24px;bottom:24px;width:300px;
+    background:var(--panel);border:1px solid var(--border);border-radius:6px;
+    padding:16px 18px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    z-index:5;box-shadow:0 12px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.03);}
+  #left h2{font-size:12px;font-weight:600;margin:0 0 12px;
+    text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);}
+  .modes{display:flex;gap:6px;margin-bottom:14px;}
+  .modes button{flex:1;padding:8px 0;font-family:'IBM Plex Mono',monospace;font-size:10px;
+    background:transparent;color:var(--muted);border:1px solid var(--border);
+    border-radius:4px;cursor:pointer;transition:all .2s;
+    letter-spacing:0.3px;}
+  .modes button:hover{color:var(--text);border-color:var(--border-bright);}
+  .modes button.active{background:rgba(69,224,201,0.10);color:var(--orn);
+    border-color:rgba(69,224,201,0.45);
+    box-shadow:0 0 12px rgba(69,224,201,0.15);}
+  label{display:block;font-family:'IBM Plex Mono',monospace;font-size:9.5px;
+    color:var(--muted-dim);margin-bottom:6px;letter-spacing:0.6px;
+    text-transform:uppercase;}
+  select{width:100%;padding:9px 10px;background:rgba(255,255,255,0.03);
+    color:var(--text);border:1px solid var(--border);border-radius:4px;
+    font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;
+    transition:border-color .15s;}
+  select:hover{border-color:var(--border-bright);}
+  button.random{width:100%;margin-top:8px;padding:10px;
+    background:rgba(242,183,5,0.08);color:var(--kc);
+    border:1px solid rgba(242,183,5,0.30);border-radius:4px;
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;cursor:pointer;
+    transition:all .2s;letter-spacing:0.4px;text-transform:uppercase;}
+  button.random:hover{background:rgba(242,183,5,0.16);
+    box-shadow:0 0 14px rgba(242,183,5,0.12);}
+  input[type=range]{width:100%;accent-color:var(--kc);margin-top:4px;}
+  .blend-labels{display:flex;justify-content:space-between;
+    font-family:'IBM Plex Mono',monospace;font-size:9px;
+    color:var(--muted-dim);margin-top:5px;}
+  #truth{margin-top:10px;padding:8px 10px;border-radius:4px;
+    font-family:'IBM Plex Mono',monospace;font-size:11px;
+    display:flex;justify-content:space-between;}
+
+  /* TOP-LEFT READOUT — moved DOWN to avoid header overlap */
+  #topleft{position:fixed;left:24px;top:96px;width:280px;
+    background:var(--panel);border:1px solid var(--border);border-radius:6px;
+    padding:14px 18px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    z-index:4;font-family:'IBM Plex Mono',monospace;font-size:10.5px;
+    color:var(--muted);line-height:1.9;
+    box-shadow:0 12px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03);}
+  #topleft::before{
+    content:"CIRCUIT READOUT";display:block;
+    font-size:9px;letter-spacing:1.4px;color:var(--muted-dim);
+    margin-bottom:10px;padding-bottom:8px;
+    border-bottom:1px solid rgba(120,140,150,0.1);}
+  #topleft .row{display:flex;justify-content:space-between;}
+  #topleft .row span{color:var(--muted);}
+  #topleft .row b{color:var(--text);font-weight:500;
+    font-variant-numeric:tabular-nums;}
+
+  /* RIGHT PANEL */
+  #right{position:fixed;right:24px;top:96px;width:320px;
+    background:var(--panel-solid);border:1px solid var(--border);border-radius:6px;
+    padding:0;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    z-index:5;overflow:hidden;max-height:calc(100vh - 200px);
+    display:flex;flex-direction:column;
+    box-shadow:0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03);}
+  .tabs{display:flex;border-bottom:1px solid var(--border);
+    background:rgba(0,0,0,0.22);}
+  .tab-btn{flex:1;padding:11px 4px;background:transparent;color:var(--muted);
+    border:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;
+    font-size:9.5px;transition:all .18s;border-bottom:2px solid transparent;
+    letter-spacing:0.3px;}
+  .tab-btn:hover{color:var(--text);}
+  .tab-btn.active{color:var(--text);border-bottom-color:var(--orn);
+    background:rgba(69,224,201,0.05);}
+  .tab-content{padding:16px 18px;overflow-y:auto;flex:1;}
+  .tab-content::-webkit-scrollbar{width:6px;}
+  .tab-content::-webkit-scrollbar-thumb{
+    background:rgba(120,140,150,0.2);border-radius:3px;}
+  .tab-pane{display:none;}
+  .tab-pane.active{display:block;animation:fadeIn .25s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px);}
+    to{opacity:1;transform:translateY(0);}}
+
+  .tab-content h2{font-size:12px;font-weight:600;margin:0 0 5px;
+    text-transform:uppercase;letter-spacing:0.9px;color:var(--text);}
+  .tab-content .desc{font-family:'IBM Plex Mono',monospace;font-size:9.5px;
+    color:var(--muted-dim);margin-bottom:16px;letter-spacing:0.2px;}
+
+  /* Prediction bars */
+  .mrow{margin-bottom:14px;}
+  .mrow .top{display:flex;justify-content:space-between;
+    font-family:'IBM Plex Mono',monospace;font-size:11px;margin-bottom:6px;}
+  .bar-track{height:6px;background:rgba(255,255,255,0.05);
+    border-radius:3px;overflow:hidden;position:relative;}
+  .bar-fill{height:100%;transition:width 0.5s cubic-bezier(0.4,0,0.2,1),
+    background 0.5s ease;border-radius:3px;
+    box-shadow:0 0 8px currentColor;}
+  .mrow.winner .top span:first-child{color:var(--kc);font-weight:600;
+    text-shadow:0 0 8px rgba(242,183,5,0.3);}
+  .verdict{margin-top:18px;padding-top:16px;
+    border-top:1px solid rgba(232,230,223,0.08);
+    font-family:'IBM Plex Mono',monospace;font-size:10px;
+    color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;}
+  .verdict b{font-family:'Fraunces',serif;font-size:22px;font-weight:600;
+    color:var(--text);display:block;margin-top:6px;letter-spacing:0.2px;
+    text-transform:none;}
+
+  /* Perception */
+  .percept-badge{display:inline-block;padding:8px 14px;border-radius:5px;
+    font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;
+    letter-spacing:0.5px;text-transform:uppercase;margin-bottom:14px;}
+  .percept-badge.wine{background:rgba(169,69,93,0.18);color:#f0a0b5;
+    border:1px solid rgba(169,69,93,0.45);}
+  .percept-badge.ind{background:rgba(201,138,31,0.18);color:#f0be5c;
+    border:1px solid rgba(201,138,31,0.45);}
+  .percept-badge.split{background:rgba(120,140,150,0.12);color:var(--muted);
+    border:1px solid var(--border);}
+  .percept-desc{font-family:'Fraunces',serif;font-size:13.5px;line-height:1.55;
+    color:var(--text);margin-bottom:18px;}
+  .sub-h{font-family:'IBM Plex Mono',monospace;font-size:9px;
+    color:var(--muted-dim);text-transform:uppercase;letter-spacing:1.3px;
+    margin:18px 0 10px;padding-bottom:6px;
+    border-bottom:1px solid rgba(120,140,150,0.08);}
+  .chip-row{display:flex;flex-wrap:wrap;gap:5px;}
+  .chip{padding:4px 10px;border-radius:12px;
+    font-family:'IBM Plex Mono',monospace;font-size:10px;
+    background:rgba(69,224,201,0.08);color:var(--orn);
+    border:1px solid rgba(69,224,201,0.24);}
+  .chip.hot{background:rgba(242,183,5,0.14);color:var(--kc);
+    border-color:rgba(242,183,5,0.45);
+    box-shadow:0 0 8px rgba(242,183,5,0.15);}
+  .stat-line{display:flex;justify-content:space-between;
+    font-family:'IBM Plex Mono',monospace;font-size:11px;padding:7px 0;
+    border-bottom:1px solid rgba(232,230,223,0.05);}
+  .stat-line:last-child{border-bottom:none;}
+  .stat-line span{color:var(--muted);}
+  .stat-line b{color:var(--text);font-weight:500;
+    font-variant-numeric:tabular-nums;}
+
+  /* Model rank */
+  .model-rank{display:flex;justify-content:space-between;align-items:center;
+    padding:9px 11px;background:rgba(255,255,255,0.02);border-radius:4px;
+    margin-bottom:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;
+    transition:all .25s;}
+  .model-rank.winner{background:rgba(242,183,5,0.08);
+    border:1px solid rgba(242,183,5,0.32);
+    box-shadow:0 0 14px rgba(242,183,5,0.08);}
+  .model-rank .rank{color:var(--muted-dim);font-size:10px;min-width:18px;}
+  .model-rank .name{flex:1;color:var(--text);}
+  .model-rank .acc{color:var(--text);font-weight:500;
+    font-variant-numeric:tabular-nums;}
+
+  /* State panel */
+  .state-badge{display:inline-block;padding:10px 16px;border-radius:5px;
+    font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;
+    letter-spacing:0.7px;text-transform:uppercase;margin-bottom:12px;
+    transition:all 0.4s ease;}
+  .state-desc{font-family:'Fraunces',serif;font-size:13px;line-height:1.6;
+    color:var(--text);margin-bottom:16px;}
+  .signal-chain{display:flex;flex-direction:column;gap:7px;margin-bottom:14px;}
+  .signal-row{display:grid;grid-template-columns:40px 1fr;gap:10px;
+    align-items:center;font-family:'IBM Plex Mono',monospace;font-size:10px;}
+  .signal-row .lbl{color:var(--muted);text-align:right;letter-spacing:0.5px;}
+  .signal-track{height:8px;background:rgba(255,255,255,0.05);
+    border-radius:4px;overflow:hidden;}
+  .signal-fill{height:100%;width:0%;transition:width 0.4s ease;border-radius:4px;
+    box-shadow:0 0 8px currentColor;}
+  .signal-fill.orn{background:linear-gradient(90deg,#0f4b4a,var(--orn));}
+  .signal-fill.pn{background:linear-gradient(90deg,#122a4d,var(--pn));}
+  .signal-fill.kc{background:linear-gradient(90deg,#5c3f00,var(--kc));}
+  .arrow-flow{font-family:'IBM Plex Mono',monospace;font-size:9px;
+    color:var(--muted-dim);opacity:0.6;margin:-3px 0 -3px 22px;}
+  .interp-note{font-family:'IBM Plex Mono',monospace;font-size:9px;
+    color:var(--muted-dim);line-height:1.55;padding:10px 12px;
+    border-radius:4px;background:rgba(255,255,255,0.015);
+    border:1px solid rgba(120,140,150,0.10);margin-top:12px;
+    font-style:italic;}
+  .state-metric{display:flex;justify-content:space-between;
+    font-family:'IBM Plex Mono',monospace;font-size:11px;padding:6px 0;
+    border-bottom:1px solid rgba(232,230,223,0.05);}
+  .state-metric:last-child{border-bottom:none;}
+  .state-metric span{color:var(--muted);}
+  .state-metric b{color:var(--text);font-weight:500;
+    font-variant-numeric:tabular-nums;}
+
+  /* BOTTOM BAR */
+  #bottom{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
+    width:660px;background:var(--panel);border:1px solid var(--border);
+    border-radius:6px;padding:16px 20px;backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);z-index:5;
+    box-shadow:0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03);}
+  #playback{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+  #play-btn{width:38px;height:38px;border-radius:50%;
+    background:rgba(69,224,201,0.12);color:var(--orn);
+    border:1px solid rgba(69,224,201,0.38);cursor:pointer;
+    font-size:14px;display:flex;align-items:center;justify-content:center;
+    transition:all .18s;flex-shrink:0;}
+  #play-btn:hover{background:rgba(69,224,201,0.24);
+    box-shadow:0 0 16px rgba(69,224,201,0.2);}
+  #play-btn.playing{background:rgba(242,183,5,0.16);color:var(--kc);
+    border-color:rgba(242,183,5,0.5);}
+  #timeline{flex:1;height:5px;}
+  #playback-label{font-family:'IBM Plex Mono',monospace;font-size:11px;
+    color:var(--text);min-width:100px;text-align:right;
+    letter-spacing:0.2px;font-variant-numeric:tabular-nums;}
+  #region-bars{display:grid;grid-template-columns:auto 1fr auto;
+    gap:7px 14px;align-items:center;font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;padding-top:14px;
+    border-top:1px solid rgba(232,230,223,0.07);}
+  #region-bars .lbl{color:var(--muted);letter-spacing:0.5px;
+    text-transform:uppercase;font-size:9.5px;}
+  #region-bars .val{color:var(--text);font-weight:500;min-width:44px;
+    text-align:right;font-variant-numeric:tabular-nums;}
+  #region-bars .track{height:8px;background:rgba(255,255,255,0.05);
+    border-radius:4px;overflow:hidden;position:relative;}
+  #region-bars .fill{height:100%;transition:width 0.18s linear;
+    border-radius:4px;box-shadow:0 0 10px currentColor;}
+  #region-bars .fill.orn{background:linear-gradient(90deg,#0f4b4a,var(--orn));color:rgba(69,224,201,0.5);}
+  #region-bars .fill.pn {background:linear-gradient(90deg,#122a4d,var(--pn)); color:rgba(122,158,224,0.5);}
+  #region-bars .fill.kc {background:linear-gradient(90deg,#5c3f00,var(--kc)); color:rgba(242,183,5,0.5);}
+  #legend{display:flex;justify-content:center;gap:20px;margin-top:14px;
+    font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--muted);
+    letter-spacing:0.3px;}
+  #legend .dot{display:inline-block;width:7px;height:7px;border-radius:50%;
+    margin-right:6px;vertical-align:middle;
+    box-shadow:0 0 8px currentColor;}
+
+  /* INFO BUTTON */
+  #info-btn{position:fixed;top:24px;right:24px;width:26px;height:26px;
+    border-radius:50%;background:var(--panel);border:1px solid var(--border);
+    color:var(--muted);cursor:pointer;font-family:'IBM Plex Mono',monospace;
+    font-size:12px;z-index:6;transition:all .18s;backdrop-filter:blur(10px);}
+  #info-btn:hover{color:var(--orn);border-color:rgba(69,224,201,0.4);
+    box-shadow:0 0 12px rgba(69,224,201,0.15);}
+  #info-panel{position:fixed;top:60px;right:24px;width:400px;
+    background:var(--panel-solid);border:1px solid var(--border);
+    border-radius:6px;padding:18px 20px;backdrop-filter:blur(14px);
+    z-index:6;font-family:'IBM Plex Mono',monospace;font-size:10px;
+    color:var(--muted);line-height:1.65;display:none;
+    box-shadow:0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);}
+  #info-panel b{color:var(--text);font-weight:500;}
+
+  #loading{position:fixed;inset:0;display:flex;align-items:center;
+    justify-content:center;background:var(--bg);z-index:100;
+    font-family:'IBM Plex Mono',monospace;color:var(--muted);font-size:12px;
+    letter-spacing:1px;text-transform:uppercase;}
+  #loading::after{
+    content:"";position:absolute;width:24px;height:24px;
+    border:2px solid rgba(69,224,201,0.2);border-top-color:var(--orn);
+    border-radius:50%;margin-top:60px;
+    animation:spin 0.9s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div id="loading">loading brain data...</div>
+<div id="canvas-wrap"></div>
+
+<header>
+  <div>
+    <h1>Olfactory Circuit — Live Fly Brain</h1>
+    <div class="sub">Real FlyWire coordinates · real connectome weights · real trained classifiers</div>
+  </div>
+    <div class="stats">
+    <div><span class="live">LIVE</span> · FlyWire FAFB v783 · <b id="stat-kc">—</b> KCs</div>
+    <div>de Bruyne 2014 · <b>71 odorants, 20 sensilla</b></div>
+  </div>
+</header>
+
+<button id="info-btn" title="About this visualization">i</button>
+<div id="info-panel">
+  <b>What is real:</b> neuron positions (FlyWire FAFB v783 soma coordinates), circuit weights (real synaptic counts), ORN responses (de Bruyne 2014 electrophysiology), predictions (your 4 trained models).
+  <br><br>
+  <b>What is stochastic:</b> the per-frame spiking animation. Firing probabilities are derived from mean activity per odorant — the exact spike timings are generated, not measured.
+  <br><br>
+  <b>Hazard scents:</b> compound ORN vectors are approximations based on Marshall et al. 2010 (Chem Senses). Radioactive entries have no published data and are speculative.
+</div>
+
+<div id="topleft">
+  <div class="row"><span>ORN active</span><b id="ro-orn">—</b></div>
+  <div class="row"><span>PN active</span><b id="ro-pn">—</b></div>
+  <div class="row"><span>KC active</span><b id="ro-kc">—</b></div>
+  <div class="row"><span>KC mean activity</span><b id="ro-kcm">—</b></div>
+</div>
+
+<div id="left">
+  <h2>Odor input</h2>
+  <div class="modes">
+    <button id="m-real" class="active">Real odorant</button>
+    <button id="m-blend">Gradient slider</button>
+    <button id="m-hazard">Hazard</button>
+  </div>
+  <div id="real-ctl">
+    <label>Sample (de Bruyne dataset, N=71)</label>
+    <select id="sample-sel"></select>
+    <button class="random" id="rand-btn">Random odorant</button>
+    <div id="truth" style="display:none;"></div>
+  </div>
+  <div id="blend-ctl" style="display:none;">
+    <label id="blend-label">Wine ↔ industrial — α=0.00</label>
+    <input type="range" id="blend-sld" min="0" max="100" value="0">
+    <div class="blend-labels"><span>wine prototype</span><span>industrial prototype</span></div>
+  </div>
+  <div id="hazard-ctl" style="display:none;">
+    <label>Hazard category</label>
+    <select id="hazard-sel"></select>
+    <label style="margin-top:10px;">Compound</label>
+    <select id="hazard-compound"></select>
+    <div id="hazard-desc" style="margin-top:10px; padding:8px 10px;
+         border-radius:3px; font-family:'IBM Plex Mono',monospace;
+         font-size:10px; color:var(--muted); line-height:1.5;
+         background:rgba(255,255,255,0.02); border:1px solid var(--border);"></div>
+  </div>
+</div>
+
+<div id="right">
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="brain">🧠 Brain</button>
+    <button class="tab-btn" data-tab="percept">👃 Perception</button>
+    <button class="tab-btn" data-tab="state">🧬 State</button>
+    <button class="tab-btn" data-tab="analytics">📊 Analytics</button>
+  </div>
+  <div class="tab-content">
+
+    <div class="tab-pane active" id="pane-brain">
+      <h2>Live prediction</h2>
+      <div class="desc">P(industrial) — real trained models on the ORN vector</div>
+      <div id="model-bars"></div>
+      <div class="verdict">model consensus<b id="verdict">—</b></div>
+    </div>
+
+    <div class="tab-pane" id="pane-percept">
+      <h2>What the fly smells</h2>
+      <div class="desc">Interpretation of the current odorant</div>
+      <div id="percept-badge" class="percept-badge split">—</div>
+      <div id="percept-desc" class="percept-desc"></div>
+      <div class="sub-h">Dominant glomeruli</div>
+      <div class="chip-row" id="percept-chips"></div>
+      <div class="sub-h">Sensory valence</div>
+      <div id="percept-stats"></div>
+    </div>
+
+    <div class="tab-pane" id="pane-state">
+      <h2>Fly neural state</h2>
+      <div class="desc">Interpretation of the ORN → PN → KC pattern</div>
+
+      <div id="state-badge" class="state-badge">—</div>
+      <div id="state-desc" class="state-desc"></div>
+
+      <div class="sub-h">Signal chain</div>
+      <div class="signal-chain">
+        <div class="signal-row">
+          <span class="lbl">ORN</span>
+          <div class="signal-track"><div class="signal-fill orn" id="signal-orn"></div></div>
+        </div>
+        <div class="arrow-flow">↓</div>
+        <div class="signal-row">
+          <span class="lbl">PN</span>
+          <div class="signal-track"><div class="signal-fill pn" id="signal-pn"></div></div>
+        </div>
+        <div class="arrow-flow">↓</div>
+        <div class="signal-row">
+          <span class="lbl">KC</span>
+          <div class="signal-track"><div class="signal-fill kc" id="signal-kc"></div></div>
+        </div>
+      </div>
+
+      <div class="sub-h">Metrics</div>
+      <div class="state-metric"><span>Propagation efficiency</span><b id="state-prop">—</b></div>
+      <div class="state-metric"><span>Breadth of response</span><b id="state-breadth">—</b></div>
+      <div class="state-metric"><span>KC ensemble size</span><b id="state-kc-ens">—</b></div>
+
+      <div class="interp-note">
+        This is a heuristic interpretation of neural activity, not a toxicological
+        assessment. A fly's survival or behaviour cannot be inferred from the
+        spike-rate averages used here.
+      </div>
+    </div>
+
+    <div class="tab-pane" id="pane-analytics">
+      <h2>Model performance</h2>
+      <div class="desc">Ranked by confidence on this sample</div>
+      <div id="analytics-rank"></div>
+      <div class="sub-h">Training summary</div>
+      <div id="analytics-train"></div>
+      <div class="sub-h">Dataset</div>
+      <div id="analytics-data"></div>
+    </div>
+
+  </div>
+</div>
+
+<div id="bottom">
+  <div id="playback">
+    <button id="play-btn" title="Auto-play">▶</button>
+    <input type="range" id="timeline" min="0" max="70" value="0" step="1">
+    <span id="playback-label">#0</span>
+  </div>
+  <div id="region-bars">
+    <span class="lbl">ORNs</span>
+    <div class="track"><div class="fill orn" id="bar-orn" style="width:0%"></div></div>
+    <span class="val" id="val-orn">0%</span>
+    <span class="lbl">PNs</span>
+    <div class="track"><div class="fill pn" id="bar-pn" style="width:0%"></div></div>
+    <span class="val" id="val-pn">0%</span>
+    <span class="lbl">KCs</span>
+    <div class="track"><div class="fill kc" id="bar-kc" style="width:0%"></div></div>
+    <span class="val" id="val-kc">0%</span>
+  </div>
+  <div id="legend">
+    <span><span class="dot" style="background:var(--orn)"></span>ORNs</span>
+    <span><span class="dot" style="background:var(--pn)"></span>Projection neurons</span>
+    <span><span class="dot" style="background:var(--kc)"></span>Kenyon cells</span>
+    <span style="opacity:0.65;">drag · scroll · space to play</span>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="utils.js"></script>
+<script src="brain_only.js"></script>
+<script src="brain.js"></script>
+<script src="panels.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
